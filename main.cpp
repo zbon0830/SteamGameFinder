@@ -8,3 +8,9 @@
 #include <algorithm>
 using namespace std;
 
+struct Game {
+    string app_id;
+    string name;
+    double price;
+    string genres;
+};
