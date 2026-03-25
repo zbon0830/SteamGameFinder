@@ -6,6 +6,8 @@
 #include <unordered_set>
 #include <set>
 #include <algorithm>
+#include <QApplication>
+#include "UI/Window.h"
 using namespace std;
 
 struct Game {
@@ -27,3 +29,12 @@ struct UnorderedStore {
     unordered_map<int, vector<string>> priceIndex;
     unordered_map<string, vector<string>> genreIndex;
 };
+
+
+//main to create the window pop up and commented out game querry main
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    Window window;
+    window.show();
+    return app.exec();
+}

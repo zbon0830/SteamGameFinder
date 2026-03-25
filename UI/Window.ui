@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <class>Window</class>
+    <widget class="QMainWindow" name="Window">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>1000</width>
+                <height>700</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>Steam Bundle Finder</string>
+        </property>
+        <widget class="QWidget" name="centralwidget">
+            <layout class="QVBoxLayout" name="verticalLayout">
+                <item>
+                    <widget class="QLabel" name="titleLabel">
+                        <property name="text">
+                            <string>Steam Bundle Finder</string>
+                        </property>
+                        <property name="alignment">
+                            <set>Qt::AlignCenter</set>
+                        </property>
+                    </widget>
+                </item>
+
+                <item>
+                    <widget class="QGroupBox" name="filtersGroupBox">
+                        <property name="title">
+                            <string>Filters</string>
+                        </property>
+                        <layout class="QFormLayout" name="formLayout">
+                            <item row="0" column="0">
+                                <widget class="QLabel" name="genreLabel">
+                                    <property name="text">
+                                        <string>Genre:</string>
+                                    </property>
+                                </widget>
+                            </item>
+                            <item row="0" column="1">
+                                <widget class="QComboBox" name="genreComboBox"/>
+                            </item>
+
+                            <item row="1" column="0">
+                                <widget class="QLabel" name="minPriceLabel">
+                                    <property name="text">
+                                        <string>Min Price:</string>
+                                    </property>
+                                </widget>
+                            </item>
+                            <item row="1" column="1">
+                                <widget class="QDoubleSpinBox" name="minPriceSpinBox">
+                                    <property name="maximum">
+                                        <double>9999.000000000000000</double>
+                                    </property>
+                                </widget>
+                            </item>
+
+                            <item row="2" column="0">
+                                <widget class="QLabel" name="maxPriceLabel">
+                                    <property name="text">
+                                        <string>Max Price:</string>
+                                    </property>
+                                </widget>
+                            </item>
+                            <item row="2" column="1">
+                                <widget class="QDoubleSpinBox" name="maxPriceSpinBox">
+                                    <property name="maximum">
+                                        <double>9999.000000000000000</double>
+                                    </property>
+                                </widget>
+                            </item>
+                        </layout>
+                    </widget>
+                </item>
+
+                <item>
+                    <widget class="QPushButton" name="searchButton">
+                        <property name="text">
+                            <string>Search</string>
+                        </property>
+                    </widget>
+                </item>
+
+                <item>
+                    <widget class="QTableWidget" name="resultsTableWidget"/>
+                </item>
+            </layout>
+        </widget>
+        <widget class="QMenuBar" name="menubar"/>
+        <widget class="QStatusBar" name="statusbar"/>
+    </widget>
+    <resources/>
+    <connections/>
+</ui>

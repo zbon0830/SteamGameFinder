@@ -8,6 +8,9 @@ void printGame(const Game& game) {
     std::cout << "--------------------------\n";
 }
 
+
+//just commenting
+/*
 int main() {
     GameDB db;
 
@@ -30,3 +33,5 @@ int main() {
     db.close();
     return 0;
 }
+
+*/
