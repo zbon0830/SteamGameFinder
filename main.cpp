@@ -19,7 +19,7 @@ struct Game {
 };
 
 struct OrderedStore {
-    map<string, Game> gamesbyID;
+    map<string, Game> gamesById;
     map<int, vector<string>> priceIndex;
     map<string, vector<string>> genreIndex;
 };
@@ -58,6 +58,25 @@ vector<string> splitGenres(const string& genres) {
     }
 
     return result;
+}
+
+// INSERTION FUNCTIONS
+void insertGame(OrderedStore& store, const Game& game) {
+    store.gamesById[game.app_id] = game;
+    store.priceIndex[game.priceCents].push_back(game.app_id);
+
+    for (const string& g : splitGenres(game.genres)) {
+        store.genreIndex[g].push_back(game.app_id);
+    }
+}
+
+void insertGame(UnorderedStore& store, const Game& game) {
+    store.gamesById[game.app_id] = game;
+    store.priceIndex[game.priceCents].push_back(game.app_id);
+
+    for (const string& g : splitGenres(game.genres)) {
+        store.genreIndex[g].push_back(game.app_id);
+    }
 }
 
 //main to create the window pop up and commented out game querry main
