@@ -113,17 +113,29 @@ int main(int argc, char *argv[]) {
         g.priceCents = static_cast<int>(g.price * 100);
         g.genres = genresText ? reinterpret_cast<const char*>(genresText) : "";
 
+        ordered.gamesById[g.app_id] = g;
+        ordered.priceIndex[g.priceCents].push_back(g.app_id);
+
+        vector<string> genreList = splitGenres(g.genres);
+        for (const string& genre : genreList) {
+            ordered.genreIndex[genre].push_back(g.app_id);
+        }
+
+        unordered.gamesById[g.app_id] = g;
+        unordered.priceIndex[g.priceCents].push_back(g.app_id);
+
+        for (const string& genre : genreList) {
+            unordered.genreIndex[genre].push_back(g.app_id);
+        }
 
     }
 
+    cout << "Loaded data successfully!\n";
 
-
-    //cout << "Loaded data successfully!\n";
-
-    //QApplication app(argc, argv);
-    //Window window;
-    //window.show();
-    //return app.exec();
+    QApplication app(argc, argv);
+    Window window;
+    window.show();
+    return app.exec();
 
     return 0;
 }
