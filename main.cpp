@@ -30,6 +30,35 @@ struct UnorderedStore {
     unordered_map<string, vector<string>> genreIndex;
 };
 
+vector<string> splitGenres(const string& genres) {
+    vector<string> result;
+    string current;
+
+    for (char c : genres) {
+        if (c == ',') {
+            if (!current.empty()) {
+                while (!current.empty() && current.front() == ' ')
+                    current.erase(current.begin());
+                while (!current.empty() && current.back() == ' ')
+                    current.pop_back();
+                result.push_back(current);
+                current.clear();
+            }
+        } else {
+            current += c;
+        }
+    }
+
+    if (!current.empty()) {
+        while (!current.empty() && current.front() == ' ')
+            current.erase(current.begin());
+        while (!current.empty() && current.back() == ' ')
+            current.pop_back();
+        result.push_back(current);
+    }
+
+    return result;
+}
 
 //main to create the window pop up and commented out game querry main
 int main(int argc, char *argv[]) {
