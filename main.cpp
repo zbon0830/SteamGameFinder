@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sqlite3.h>
 #include <vector>
 #include <string>
 #include <map>
@@ -79,10 +80,50 @@ void insertGame(UnorderedStore& store, const Game& game) {
     }
 }
 
-//main to create the window pop up and commented out game querry main
+
 int main(int argc, char *argv[]) {
-    QApplication app(argc, argv);
-    Window window;
-    window.show();
-    return app.exec();
+    OrderedStore ordered;
+    UnorderedStore unordered;
+    sqlite3* db;
+
+    if (sqlite3_open("../database/games.db", &db) != SQLITE_OK) {
+        cerr << "Can't open database: " << sqlite3_errmsg(db) << "\n";
+        sqlite3_close(db);
+        return 1;
+    }
+
+    string sql = "SELECT app_id, name, price, genres FROM games;";
+
+    sqlite3_stmt* stmt;
+
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        cerr << "Failed to prepare statement\n";
+        return 1;
+    }
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        Game g;
+
+        const unsigned char* appIdText = sqlite3_column_text(stmt, 0);
+        const unsigned char* nameText = sqlite3_column_text(stmt, 1);
+        const unsigned char* genresText = sqlite3_column_text(stmt, 3);
+
+        g.app_id = appIdText ? reinterpret_cast<const char*>(appIdText) : "";
+        g.name = nameText ? reinterpret_cast<const char*>(nameText) : "";
+        g.price = sqlite3_column_double(stmt, 2);
+        g.priceCents = static_cast<int>(g.price * 100);
+        g.genres = genresText ? reinterpret_cast<const char*>(genresText) : "";
+
+
+    }
+
+
+
+    //cout << "Loaded data successfully!\n";
+
+    //QApplication app(argc, argv);
+    //Window window;
+    //window.show();
+    //return app.exec();
+
+    return 0;
 }
