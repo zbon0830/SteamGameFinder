@@ -103,7 +103,7 @@ unordered_set<string> searchGenreOrdered(const OrderedStore& store, const string
     }
     return result;
 }
-unordered_set<string> getPriceUnordered(const UnorderedStore& store, int minP, int maxP) {
+unordered_set<string> searchPriceUnordered(const UnorderedStore& store, int minP, int maxP) {
     unordered_set<string> result;
 
     for (auto p : store.priceIndex) {
@@ -112,8 +112,9 @@ unordered_set<string> getPriceUnordered(const UnorderedStore& store, int minP, i
                 result.insert(id);
         }
     }
+    return result;
 }
-unordered_set<string> getGenreUnordered(const UnorderedStore& store, const string& genre) {
+unordered_set<string> searchGenreUnordered(const UnorderedStore& store, const string& genre) {
     unordered_set<string> result;
 
     if (store.genreIndex.count(genre)) {
@@ -198,11 +199,29 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "Loaded data successfully!\n";
+    string mode;
+    double minPriceInput, maxPriceInput;
+    string genre;
 
-    QApplication app(argc, argv);
-    Window window;
-    window.show();
-    return app.exec();
+    cout << "Use ordered or unordered: ";
+    cin >> mode;
+
+    cout << "Min price: ";
+    cin >> minPriceInput;
+
+    cout << "Max price: ";
+    cin >> maxPriceInput;
+
+    cin.ignore();
+    cout << "Genre: ";
+    getline(cin, genre);
+
+
+
+    //QApplication app(argc, argv);
+    //Window window;
+    //window.show();
+    //return app.exec();
 
     return 0;
 }
