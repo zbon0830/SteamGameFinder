@@ -123,6 +123,31 @@ unordered_set<string> getGenreUnordered(const UnorderedStore& store, const strin
     }
     return result;
 }
+
+//COMBINING FUNCTION
+vector<string> intersect(const unordered_set<string>& a, const unordered_set<string>& b) {
+    vector<string> result;
+
+    for (const string& id : a) {
+        if (b.count(id)) {
+            result.push_back(id);
+        }
+    }
+    return result;
+}
+
+// PRINTING FUNCTION
+template <typename Store>
+void printResults(const Store& store, const vector<string>& ids) {
+    for (const string& id : ids) {
+        const Game& g = store.gamesById.at(id);
+
+        cout << g.name
+             << " | $" << g.price
+             << " | " << g.genres << endl;
+    }
+}
+
 int main(int argc, char *argv[]) {
     OrderedStore ordered;
     UnorderedStore unordered;
