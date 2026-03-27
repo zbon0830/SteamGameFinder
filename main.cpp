@@ -216,8 +216,47 @@ int main(int argc, char *argv[]) {
     cout << "Genre: ";
     getline(cin, genre);
 
+    int minPrice = (int)(minPriceInput * 100);
+    int maxPrice = (int)(maxPriceInput * 100);
 
+    // ---------------- RUN ----------------
+    if (mode == "ordered") {
 
+        auto start = chrono::high_resolution_clock::now();
+
+        auto p = searchPriceOrdered(ordered, minPrice, maxPrice);
+        auto g = searchGenreOrdered(ordered, genre);
+
+        vector<string> result = intersect(p, g);
+
+        auto end = chrono::high_resolution_clock::now();
+
+        cout << "\nOrdered Results:\n";
+        printResults(ordered, result);
+
+        cout << "Time: " << chrono::duration_cast<chrono::microseconds>(end - start).count() << " us\n";
+    }
+
+    else if (mode == "unordered") {
+
+        auto start = chrono::high_resolution_clock::now();
+
+        auto p = searchPriceUnordered(unordered, minPrice, maxPrice);
+        auto g = searchGenreUnordered(unordered, genre);
+
+        vector<string> result = intersect(p, g);
+
+        auto end = chrono::high_resolution_clock::now();
+
+        cout << "\nUnordered Results:\n";
+        printResults(unordered, result);
+
+        cout << "Time: " << chrono::duration_cast<chrono::microseconds>(end - start).count() << " us\n";
+    }
+
+    else {
+        cout << "Invalid option.\n";
+    }
     //QApplication app(argc, argv);
     //Window window;
     //window.show();
