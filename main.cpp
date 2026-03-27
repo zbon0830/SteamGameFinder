@@ -79,8 +79,50 @@ void insertGame(UnorderedStore& store, const Game& game) {
         store.genreIndex[g].push_back(game.app_id);
     }
 }
+//SEARCH FUNCTIONS
+unordered_set<string> searchPriceOrdered(const OrderedStore& store, int minP, int maxP) {
+    unordered_set<string> result;
 
+    auto start = store.priceIndex.lower_bound(minP);
+    auto end = store.priceIndex.upper_bound(maxP);
+    for (auto it = start; it != end; ++it) {
+        for (const string& id : it->second) {
+            result.insert(id);
+        }
+    }
+    return result;
+}
 
+unordered_set<string> searchGenreOrdered(const OrderedStore& store, const string& genre) {
+    unordered_set<string> result;
+
+    if (store.genreIndex.count(genre)) {
+        for (const string& id : store.genreIndex.at(genre)) {
+            result.insert(id);
+        }
+    }
+    return result;
+}
+unordered_set<string> getPriceUnordered(const UnorderedStore& store, int minP, int maxP) {
+    unordered_set<string> result;
+
+    for (auto p : store.priceIndex) {
+        if (p.first >= minP && p.first <= maxP) {
+            for (const string& id : p.second)
+                result.insert(id);
+        }
+    }
+}
+unordered_set<string> getGenreUnordered(const UnorderedStore& store, const string& genre) {
+    unordered_set<string> result;
+
+    if (store.genreIndex.count(genre)) {
+        for (const string& id : store.genreIndex.at(genre)) {
+            result.insert(id);
+        }
+    }
+    return result;
+}
 int main(int argc, char *argv[]) {
     OrderedStore ordered;
     UnorderedStore unordered;
