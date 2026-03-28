@@ -13,7 +13,9 @@ qt_standard_project_setup()
 qt_add_executable(SteamGameFinder
         main.cpp
         database/GameDB.cpp
-        database/game_query.cpp
+        database/GameDB.h
+        database/Logic.cpp
+        database/Logic.h
         resources/sqlite/sqlite3.c
         UI/Window.cpp
         UI/Window.h
@@ -24,6 +26,7 @@ target_include_directories(SteamGameFinder PRIVATE
         database
         resources/sqlite
 )
+
 target_link_libraries(SteamGameFinder PRIVATE
         Qt6::Widgets
 )

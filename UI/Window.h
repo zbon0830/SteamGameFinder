@@ -1,6 +1,8 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 #include <QMainWindow>
+#include "GameDB.h"
+#include "Logic.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -17,6 +19,11 @@ public:
 
 private:
     Ui::Window *ui;
+    GameDB db;
+    OrderedStore orderedStore;
+    UnorderedStore unorderedStore;
+    void loadStores();
+    void runSearch();
 };
 
 #endif

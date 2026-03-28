@@ -3,41 +3,135 @@
 #include <QStringList>
 #include <QHeaderView>
 #include <QAbstractItemView>
+#include <QMessageBox>
+#include <QCoreApplication>
+#include <QTableWidgetItem>
+#include <QStatusBar>
+#include <chrono>
+#include <algorithm>
+#include <cctype>
+
+namespace {
+    std::string trimString(const std::string& s) {
+        size_t start = 0;
+        while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start]))) {start++;}
+
+        size_t end = s.size();
+        while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1]))) {end--;}
+
+        return s.substr(start, end - start);
+    }
+
+    std::string NormalizeLabel(const std::string& s) {
+        std::string cleaned = trimString(s);
+
+        for (char& c : cleaned) {
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        }
+
+        return cleaned;
+    }
+
+    bool labelExistsInStore(const OrderedStore& store, const std::string& label) {
+        std::string normalized = NormalizeLabel(label);
+
+        if (store.genreIndex.count(normalized)) {
+            return true;
+        }
+
+        for (const auto& pair : store.genreIndex) {
+            if (pair.first.find(normalized) != std::string::npos ||
+                normalized.find(pair.first) != std::string::npos) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    QStringList buildDropdownOptions(const OrderedStore& store) {
+        std::vector<QString> preferredOptions = {
+            "Action",
+            "Adventure",
+            "Anime",
+            "Casual",
+            "Co-op",
+            "Early Access",
+            "Fantasy",
+            "Fighting",
+            "Horror",
+            "Indie",
+            "Multiplayer",
+            "Mystery",
+            "Open World",
+            "Platformer",
+            "Puzzle",
+            "Racing",
+            "RPG",
+            "Sandbox",
+            "Sci-Fi",
+            "Shooter",
+            "Simulation",
+            "Sports",
+            "Story",
+            "Strategy",
+            "Survival"
+        };
+
+        QStringList result;
+        result << "Any";
+
+        for (const QString& option : preferredOptions) {
+            if (labelExistsInStore(store, option.toStdString())) {
+                result << option;
+            }
+        }
+
+        return result;
+    }
+
+    int reviewScore(const Game& game) {
+        return game.positive - game.negative;
+    }
+
+    void sortResults(std::vector<std::string>& results,
+                     const OrderedStore& store,
+                     const QString& sortOption) {
+        if (sortOption == "Name (A-Z)") {
+            std::sort(results.begin(), results.end(),
+                [&](const std::string& a, const std::string& b) {
+                    return store.gamesById.at(a).name < store.gamesById.at(b).name;
+                });
+        }
+        else if (sortOption == "Price (Low-High)") {
+            std::sort(results.begin(), results.end(),
+                [&](const std::string& a, const std::string& b) {
+                    return store.gamesById.at(a).price < store.gamesById.at(b).price;
+                });
+        }
+        else if (sortOption == "Price (High-Low)") {
+            std::sort(results.begin(), results.end(),
+                [&](const std::string& a, const std::string& b) {
+                    return store.gamesById.at(a).price > store.gamesById.at(b).price;
+                });
+        }
+        else if (sortOption == "Reviews (Most Positive)") {
+            std::sort(results.begin(), results.end(),
+                [&](const std::string& a, const std::string& b) {
+                    return reviewScore(store.gamesById.at(a)) > reviewScore(store.gamesById.at(b));
+                });
+        }
+    }
+}
 
 Window::Window(QWidget *parent)
     : QMainWindow(parent),
       ui(new Ui::Window) {
     ui->setupUi(this);
+
     setWindowTitle("Steam Bundle Finder");
     resize(1000, 700);
-    QStringList genres = {
-        "Any",
-        "Action",
-        "Adventure",
-        "Anime",
-        "Casual",
-        "Co-op",
-        "Fantasy",
-        "Fighting",
-        "Horror",
-        "Indie",
-        "Multiplayer",
-        "Mystery",
-        "Open World",
-        "Platformer",
-        "Puzzle",
-        "Racing",
-        "RPG",
-        "Sandbox",
-        "Sci-Fi",
-        "Shooter",
-        "Simulation",
-        "Sports",
-        "Story",
-        "Strategy",
-        "Survival"
-    };
-    ui->genreComboBox->addItems(genres);
+
     ui->minPriceSpinBox->setPrefix("$");
     ui->maxPriceSpinBox->setPrefix("$");
     ui->minPriceSpinBox->setMaximum(9999.0);
@@ -46,6 +140,16 @@ Window::Window(QWidget *parent)
     ui->maxPriceSpinBox->setValue(60.0);
     ui->minPriceSpinBox->setDecimals(2);
     ui->maxPriceSpinBox->setDecimals(2);
+
+    ui->sortComboBox->clear();
+    ui->sortComboBox->addItems({
+        "Default",
+        "Name (A-Z)",
+        "Price (Low-High)",
+        "Price (High-Low)",
+        "Reviews (Most Positive)"
+    });
+
     ui->resultsTableWidget->setColumnCount(4);
     ui->resultsTableWidget->setHorizontalHeaderLabels({"Name", "Price", "Genre", "Reviews"});
     ui->resultsTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -55,6 +159,7 @@ Window::Window(QWidget *parent)
     ui->resultsTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->resultsTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->resultsTableWidget->setRowCount(0);
+
     this->setStyleSheet(R"(
         QMainWindow {background-color: #0d1324;}
         QWidget {
@@ -119,6 +224,124 @@ Window::Window(QWidget *parent)
             font-weight: bold;
         }
     )");
+
+    connect(ui->searchButton, &QPushButton::clicked, this, &Window::runSearch);
+
+    QString dbPath = QCoreApplication::applicationDirPath() + "/../database/games.db";
+
+    if (!db.open(dbPath.toStdString())) {
+        QMessageBox::critical(this, "Database Error",
+                              "Could not open games.db\n\nPath tried:\n" + dbPath);
+        return;
+    }
+
+    loadStores();
+}
+
+void Window::loadStores() {
+    std::vector<Game> allGames = db.getAllGames();
+
+    for (const Game& game : allGames) {
+        insertGame(orderedStore, game);
+        insertGame(unorderedStore, game);
+    }
+
+    ui->genreComboBox->clear();
+    ui->genreComboBox->addItems(buildDropdownOptions(orderedStore));
+
+    statusBar()->showMessage(
+        QString("Loaded %1 games. Choose filters and click Search.")
+            .arg(static_cast<int>(allGames.size()))
+    );
+}
+
+void Window::runSearch() {
+    double minPriceInput = ui->minPriceSpinBox->value();
+    double maxPriceInput = ui->maxPriceSpinBox->value();
+    QString genre = ui->genreComboBox->currentText();
+    QString sortOption = ui->sortComboBox->currentText();
+
+    if (minPriceInput > maxPriceInput) {
+        QMessageBox::warning(this, "Invalid Price Range",
+                             "Minimum price cannot be greater than maximum price.");
+        return;
+    }
+
+    int minPrice = static_cast<int>(minPriceInput * 100);
+    int maxPrice = static_cast<int>(maxPriceInput * 100);
+
+    std::vector<std::string> orderedResult;
+    std::vector<std::string> unorderedResult;
+
+    auto orderedStart = std::chrono::high_resolution_clock::now();
+    auto orderedPrice = searchPriceOrdered(orderedStore, minPrice, maxPrice);
+
+    if (genre == "Any") {
+        orderedResult.assign(orderedPrice.begin(), orderedPrice.end());
+    } else {
+        auto orderedGenre = searchGenreOrdered(orderedStore, genre.toStdString());
+        orderedResult = intersect(orderedPrice, orderedGenre);
+    }
+
+    auto orderedEnd = std::chrono::high_resolution_clock::now();
+
+    auto unorderedStart = std::chrono::high_resolution_clock::now();
+    auto unorderedPrice = searchPriceUnordered(unorderedStore, minPrice, maxPrice);
+
+    if (genre == "Any") {
+        unorderedResult.assign(unorderedPrice.begin(), unorderedPrice.end());
+    } else {
+        auto unorderedGenre = searchGenreUnordered(unorderedStore, genre.toStdString());
+        unorderedResult = intersect(unorderedPrice, unorderedGenre);
+    }
+
+    auto unorderedEnd = std::chrono::high_resolution_clock::now();
+
+    sortResults(orderedResult, orderedStore, sortOption);
+
+    ui->resultsTableWidget->setRowCount(0);
+
+    const int displayLimit = 200;
+    int rowsToShow = std::min(static_cast<int>(orderedResult.size()), displayLimit);
+
+    ui->resultsTableWidget->setUpdatesEnabled(false);
+
+    for (int i = 0; i < rowsToShow; i++) {
+        const Game& game = orderedStore.gamesById.at(orderedResult[i]);
+
+        int row = ui->resultsTableWidget->rowCount();
+        ui->resultsTableWidget->insertRow(row);
+
+        ui->resultsTableWidget->setItem(row, 0,
+            new QTableWidgetItem(QString::fromStdString(game.name)));
+
+        ui->resultsTableWidget->setItem(row, 1,
+            new QTableWidgetItem(QString("$%1").arg(game.price, 0, 'f', 2)));
+
+        QString displayGenre = game.tags.empty()
+            ? QString::fromStdString(game.genres)
+            : QString::fromStdString(game.tags);
+
+        ui->resultsTableWidget->setItem(row, 2,
+            new QTableWidgetItem(displayGenre));
+
+        QString reviewText = QString("%1 positive / %2 negative")
+                                 .arg(game.positive)
+                                 .arg(game.negative);
+
+        ui->resultsTableWidget->setItem(row, 3,
+            new QTableWidgetItem(reviewText));
+    }
+    ui->resultsTableWidget->setUpdatesEnabled(true);
+    auto orderedTime = std::chrono::duration_cast<std::chrono::microseconds>(orderedEnd - orderedStart).count();
+    auto unorderedTime = std::chrono::duration_cast<std::chrono::microseconds>(unorderedEnd - unorderedStart).count();
+    statusBar()->showMessage(
+        QString("Showing %1 of %2 game(s) | ordered: %3 us | unordered: %4 us")
+            .arg(rowsToShow)
+            .arg(static_cast<int>(orderedResult.size()))
+            .arg(orderedTime)
+            .arg(unorderedTime)
+    );
 }
 
 Window::~Window() {
