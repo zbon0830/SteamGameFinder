@@ -84,6 +84,14 @@
                             <item row="3" column="1">
                                 <widget class="QComboBox" name="sortComboBox"/>
                             </item>
+
+                            <item row="4" column="0" colspan="2">
+                                <widget class="QPushButton" name="searchModeButton">
+                                    <property name="text">
+                                        <string>Search Mode: Ordered</string>
+                                    </property>
+                                </widget>
+                            </item>
                         </layout>
                     </widget>
                 </item>

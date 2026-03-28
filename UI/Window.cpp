@@ -94,8 +94,9 @@ namespace {
         return game.positive - game.negative;
     }
 
+    template <typename Store>
     void sortResults(std::vector<std::string>& results,
-                     const OrderedStore& store,
+                     const Store& store,
                      const QString& sortOption) {
         if (sortOption == "Name (A-Z)") {
             std::sort(results.begin(), results.end(),
@@ -159,6 +160,8 @@ Window::Window(QWidget *parent)
     ui->resultsTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->resultsTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->resultsTableWidget->setRowCount(0);
+    ui->searchModeButton->setCheckable(true);
+    updateSearchModeButton();
 
     this->setStyleSheet(R"(
         QMainWindow {background-color: #0d1324;}
@@ -226,6 +229,10 @@ Window::Window(QWidget *parent)
     )");
 
     connect(ui->searchButton, &QPushButton::clicked, this, &Window::runSearch);
+    connect(ui->searchModeButton, &QPushButton::clicked, this, [this]() {
+        useOrderedSearch = !useOrderedSearch;
+        updateSearchModeButton();
+    });
 
     QString dbPath = QCoreApplication::applicationDirPath() + "/../database/games.db";
 
@@ -255,6 +262,13 @@ void Window::loadStores() {
     );
 }
 
+void Window::updateSearchModeButton() {
+    ui->searchModeButton->setChecked(!useOrderedSearch);
+    ui->searchModeButton->setText(
+        useOrderedSearch ? "Search Mode: Ordered" : "Search Mode: Unordered"
+    );
+}
+
 void Window::runSearch() {
     double minPriceInput = ui->minPriceSpinBox->value();
     double maxPriceInput = ui->maxPriceSpinBox->value();
@@ -270,24 +284,62 @@ void Window::runSearch() {
     int minPrice = static_cast<int>(minPriceInput * 100);
     int maxPrice = static_cast<int>(maxPriceInput * 100);
 
-    std::vector<std::string> orderedResult;
-    std::vector<std::string> unorderedResult;
+    ui->resultsTableWidget->setRowCount(0);
+    ui->resultsTableWidget->setUpdatesEnabled(false);
 
-    auto orderedStart = std::chrono::high_resolution_clock::now();
-    auto orderedPrice = searchPriceOrdered(orderedStore, minPrice, maxPrice);
+    if (useOrderedSearch) {
+        auto orderedStart = std::chrono::high_resolution_clock::now();
+        auto orderedPrice = searchPriceOrdered(orderedStore, minPrice, maxPrice);
 
-    if (genre == "Any") {
-        orderedResult.assign(orderedPrice.begin(), orderedPrice.end());
-    } else {
-        auto orderedGenre = searchGenreOrdered(orderedStore, genre.toStdString());
-        orderedResult = intersect(orderedPrice, orderedGenre);
+        std::vector<std::string> orderedResult;
+        if (genre == "Any") {
+            orderedResult.assign(orderedPrice.begin(), orderedPrice.end());
+        } else {
+            auto orderedGenre = searchGenreOrdered(orderedStore, genre.toStdString());
+            orderedResult = intersect(orderedPrice, orderedGenre);
+        }
+
+        auto orderedEnd = std::chrono::high_resolution_clock::now();
+        sortResults(orderedResult, orderedStore, sortOption);
+
+        int rowsToShow = static_cast<int>(orderedResult.size());
+        for (int i = 0; i < rowsToShow; i++) {
+            const Game& game = orderedStore.gamesById.at(orderedResult[i]);
+
+            int row = ui->resultsTableWidget->rowCount();
+            ui->resultsTableWidget->insertRow(row);
+
+            ui->resultsTableWidget->setItem(row, 0,
+                new QTableWidgetItem(QString::fromStdString(game.name)));
+            ui->resultsTableWidget->setItem(row, 1,
+                new QTableWidgetItem(QString("$%1").arg(game.price, 0, 'f', 2)));
+
+            QString displayGenre = game.tags.empty()
+                ? QString::fromStdString(game.genres)
+                : QString::fromStdString(game.tags);
+            ui->resultsTableWidget->setItem(row, 2, new QTableWidgetItem(displayGenre));
+
+            QString reviewText = QString("%1 positive / %2 negative")
+                                     .arg(game.positive)
+                                     .arg(game.negative);
+            ui->resultsTableWidget->setItem(row, 3, new QTableWidgetItem(reviewText));
+        }
+
+        ui->resultsTableWidget->setUpdatesEnabled(true);
+        auto orderedTime = std::chrono::duration_cast<std::chrono::microseconds>(orderedEnd - orderedStart).count();
+        statusBar()->showMessage(
+            QString("Showing %1 of %2 game(s) | mode: ordered | time: %3 us")
+                .arg(rowsToShow)
+                .arg(static_cast<int>(orderedResult.size()))
+                .arg(orderedTime)
+        );
+        return;
     }
-
-    auto orderedEnd = std::chrono::high_resolution_clock::now();
 
     auto unorderedStart = std::chrono::high_resolution_clock::now();
     auto unorderedPrice = searchPriceUnordered(unorderedStore, minPrice, maxPrice);
 
+    std::vector<std::string> unorderedResult;
     if (genre == "Any") {
         unorderedResult.assign(unorderedPrice.begin(), unorderedPrice.end());
     } else {
@@ -296,50 +348,37 @@ void Window::runSearch() {
     }
 
     auto unorderedEnd = std::chrono::high_resolution_clock::now();
+    sortResults(unorderedResult, unorderedStore, sortOption);
 
-    sortResults(orderedResult, orderedStore, sortOption);
-
-    ui->resultsTableWidget->setRowCount(0);
-
-    const int displayLimit = 200;
-    int rowsToShow = std::min(static_cast<int>(orderedResult.size()), displayLimit);
-
-    ui->resultsTableWidget->setUpdatesEnabled(false);
-
+    int rowsToShow = static_cast<int>(unorderedResult.size());
     for (int i = 0; i < rowsToShow; i++) {
-        const Game& game = orderedStore.gamesById.at(orderedResult[i]);
+        const Game& game = unorderedStore.gamesById.at(unorderedResult[i]);
 
         int row = ui->resultsTableWidget->rowCount();
         ui->resultsTableWidget->insertRow(row);
 
         ui->resultsTableWidget->setItem(row, 0,
             new QTableWidgetItem(QString::fromStdString(game.name)));
-
         ui->resultsTableWidget->setItem(row, 1,
             new QTableWidgetItem(QString("$%1").arg(game.price, 0, 'f', 2)));
 
         QString displayGenre = game.tags.empty()
             ? QString::fromStdString(game.genres)
             : QString::fromStdString(game.tags);
-
-        ui->resultsTableWidget->setItem(row, 2,
-            new QTableWidgetItem(displayGenre));
+        ui->resultsTableWidget->setItem(row, 2, new QTableWidgetItem(displayGenre));
 
         QString reviewText = QString("%1 positive / %2 negative")
                                  .arg(game.positive)
                                  .arg(game.negative);
-
-        ui->resultsTableWidget->setItem(row, 3,
-            new QTableWidgetItem(reviewText));
+        ui->resultsTableWidget->setItem(row, 3, new QTableWidgetItem(reviewText));
     }
+
     ui->resultsTableWidget->setUpdatesEnabled(true);
-    auto orderedTime = std::chrono::duration_cast<std::chrono::microseconds>(orderedEnd - orderedStart).count();
     auto unorderedTime = std::chrono::duration_cast<std::chrono::microseconds>(unorderedEnd - unorderedStart).count();
     statusBar()->showMessage(
-        QString("Showing %1 of %2 game(s) | ordered: %3 us | unordered: %4 us")
+        QString("Showing %1 of %2 game(s) | mode: unordered | time: %3 us")
             .arg(rowsToShow)
-            .arg(static_cast<int>(orderedResult.size()))
-            .arg(orderedTime)
+            .arg(static_cast<int>(unorderedResult.size()))
             .arg(unorderedTime)
     );
 }

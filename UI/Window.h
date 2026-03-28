@@ -22,8 +22,10 @@ private:
     GameDB db;
     OrderedStore orderedStore;
     UnorderedStore unorderedStore;
+    bool useOrderedSearch = true;
     void loadStores();
     void runSearch();
+    void updateSearchModeButton();
 };
 
 #endif
