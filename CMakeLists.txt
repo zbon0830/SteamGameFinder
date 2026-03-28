@@ -13,6 +13,7 @@ qt_standard_project_setup()
 qt_add_executable(SteamGameFinder
         main.cpp
         database/GameDB.cpp
+        database/GameSearch.cpp
         database/game_query.cpp
         resources/sqlite/sqlite3.c
         UI/Window.cpp

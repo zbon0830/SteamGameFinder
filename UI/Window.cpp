@@ -1,11 +1,16 @@
 #include "Window.h"
 #include "ui_Window.h"
-#include <QStringList>
-#include <QHeaderView>
-#include <QAbstractItemView>
 
-Window::Window(QWidget *parent)
+#include <QAbstractItemView>
+#include <QHeaderView>
+#include <QPushButton>
+#include <QStatusBar>
+#include <QTableWidgetItem>
+#include <QStringList>
+
+Window::Window(GameSearch* searchEngine, QWidget *parent)
     : QMainWindow(parent),
+      searchEngine(searchEngine),
       ui(new Ui::Window) {
     ui->setupUi(this);
     setWindowTitle("Steam Bundle Finder");
@@ -38,6 +43,7 @@ Window::Window(QWidget *parent)
         "Survival"
     };
     ui->genreComboBox->addItems(genres);
+    ui->modeComboBox->addItems({"Ordered", "Unordered"});
     ui->minPriceSpinBox->setPrefix("$");
     ui->maxPriceSpinBox->setPrefix("$");
     ui->minPriceSpinBox->setMaximum(9999.0);
@@ -55,6 +61,8 @@ Window::Window(QWidget *parent)
     ui->resultsTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->resultsTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->resultsTableWidget->setRowCount(0);
+    connect(ui->searchButton, &QPushButton::clicked, this, &Window::runSearch);
+    statusBar()->showMessage(searchEngine != nullptr && !searchEngine->empty() ? "Ready" : "No game data loaded");
     this->setStyleSheet(R"(
         QMainWindow {background-color: #0d1324;}
         QWidget {
@@ -123,4 +131,55 @@ Window::Window(QWidget *parent)
 
 Window::~Window() {
     delete ui;
+}
+
+void Window::runSearch() {
+    if (searchEngine == nullptr || searchEngine->empty()) {
+        statusBar()->showMessage("No game data loaded");
+        ui->resultsTableWidget->setRowCount(0);
+        return;
+    }
+
+    const double minPrice = ui->minPriceSpinBox->value();
+    const double maxPrice = ui->maxPriceSpinBox->value();
+    if (minPrice > maxPrice) {
+        statusBar()->showMessage("Min price must be less than or equal to max price");
+        return;
+    }
+
+    QString genreText = ui->genreComboBox->currentText();
+    if (genreText == "Any") {
+        genreText.clear();
+    }
+
+    const SearchMode mode = ui->modeComboBox->currentText() == "Ordered"
+        ? SearchMode::Ordered
+        : SearchMode::Unordered;
+
+    const SearchResults results = searchEngine->search(
+        genreText.toStdString(),
+        static_cast<int>(minPrice * 100.0),
+        static_cast<int>(maxPrice * 100.0),
+        mode
+    );
+
+    populateResults(results);
+
+    statusBar()->showMessage(QString("%1 results in %2 us using %3 search")
+                                 .arg(results.games.size())
+                                 .arg(results.elapsedMicroseconds)
+                                 .arg(ui->modeComboBox->currentText().toLower()));
+}
+
+void Window::populateResults(const SearchResults& results) {
+    ui->resultsTableWidget->setRowCount(static_cast<int>(results.games.size()));
+
+    for (int row = 0; row < static_cast<int>(results.games.size()); ++row) {
+        const Game& game = results.games[static_cast<std::size_t>(row)];
+
+        ui->resultsTableWidget->setItem(row, 0, new QTableWidgetItem(QString::fromStdString(game.name)));
+        ui->resultsTableWidget->setItem(row, 1, new QTableWidgetItem(QString("$%1").arg(game.price, 0, 'f', 2)));
+        ui->resultsTableWidget->setItem(row, 2, new QTableWidgetItem(QString::fromStdString(game.genres)));
+        ui->resultsTableWidget->setItem(row, 3, new QTableWidgetItem(QString::fromStdString(game.reviews)));
+    }
 }

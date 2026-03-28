@@ -33,24 +33,35 @@
                         </property>
                         <layout class="QFormLayout" name="formLayout">
                             <item row="0" column="0">
+                                <widget class="QLabel" name="modeLabel">
+                                    <property name="text">
+                                        <string>Search Type:</string>
+                                    </property>
+                                </widget>
+                            </item>
+                            <item row="0" column="1">
+                                <widget class="QComboBox" name="modeComboBox"/>
+                            </item>
+
+                            <item row="1" column="0">
                                 <widget class="QLabel" name="genreLabel">
                                     <property name="text">
                                         <string>Genre:</string>
                                     </property>
                                 </widget>
                             </item>
-                            <item row="0" column="1">
+                            <item row="1" column="1">
                                 <widget class="QComboBox" name="genreComboBox"/>
                             </item>
 
-                            <item row="1" column="0">
+                            <item row="2" column="0">
                                 <widget class="QLabel" name="minPriceLabel">
                                     <property name="text">
                                         <string>Min Price:</string>
                                     </property>
                                 </widget>
                             </item>
-                            <item row="1" column="1">
+                            <item row="2" column="1">
                                 <widget class="QDoubleSpinBox" name="minPriceSpinBox">
                                     <property name="maximum">
                                         <double>9999.000000000000000</double>
@@ -58,14 +69,14 @@
                                 </widget>
                             </item>
 
-                            <item row="2" column="0">
+                            <item row="3" column="0">
                                 <widget class="QLabel" name="maxPriceLabel">
                                     <property name="text">
                                         <string>Max Price:</string>
                                     </property>
                                 </widget>
                             </item>
-                            <item row="2" column="1">
+                            <item row="3" column="1">
                                 <widget class="QDoubleSpinBox" name="maxPriceSpinBox">
                                     <property name="maximum">
                                         <double>9999.000000000000000</double>
