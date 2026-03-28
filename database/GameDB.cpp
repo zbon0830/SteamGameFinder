@@ -46,8 +46,7 @@ Game GameDB::rowToGame(sqlite3_stmt* stmt) {
         game.genres = featureText;
     }
 
-    game.positive = sqlite3_column_int(stmt, 6);
-    game.negative = sqlite3_column_int(stmt, 7);
+    game.recommendations = sqlite3_column_int(stmt, 6);
 
     return game;
 }
@@ -55,7 +54,7 @@ Game GameDB::rowToGame(sqlite3_stmt* stmt) {
 std::vector<Game> GameDB::getAllGames() {
     std::vector<Game> games;
     const char* sql =
-        "SELECT app_id, name, price, genres, tags, categories, positive, negative "
+        "SELECT app_id, name, price, genres, tags, categories, recommendations "
         "FROM games;";
     sqlite3_stmt* stmt = nullptr;
 
@@ -75,7 +74,7 @@ std::vector<Game> GameDB::getAllGames() {
 std::vector<Game> GameDB::getGamesByName(const std::string& name) {
     std::vector<Game> games;
     const char* sql =
-        "SELECT app_id, name, price, genres, tags, categories, positive, negative "
+        "SELECT app_id, name, price, genres, tags, categories, recommendations "
         "FROM games WHERE name LIKE ?;";
     sqlite3_stmt* stmt = nullptr;
 
@@ -98,7 +97,7 @@ std::vector<Game> GameDB::getGamesByName(const std::string& name) {
 std::vector<Game> GameDB::getGamesByPriceLessThanOrEqual(double maxPrice) {
     std::vector<Game> games;
     const char* sql =
-        "SELECT app_id, name, price, genres, tags, categories, positive, negative "
+        "SELECT app_id, name, price, genres, tags, categories, recommendations "
         "FROM games WHERE price <= ?;";
     sqlite3_stmt* stmt = nullptr;
 
@@ -120,7 +119,7 @@ std::vector<Game> GameDB::getGamesByPriceLessThanOrEqual(double maxPrice) {
 std::vector<Game> GameDB::getGamesByPriceRange(double minPrice, double maxPrice) {
     std::vector<Game> games;
     const char* sql =
-        "SELECT app_id, name, price, genres, tags, categories, positive, negative "
+        "SELECT app_id, name, price, genres, tags, categories, recommendations "
         "FROM games WHERE price BETWEEN ? AND ?;";
     sqlite3_stmt* stmt = nullptr;
 
@@ -143,7 +142,7 @@ std::vector<Game> GameDB::getGamesByPriceRange(double minPrice, double maxPrice)
 std::vector<Game> GameDB::getGamesByGenre(const std::string& genre) {
     std::vector<Game> games;
     const char* sql =
-        "SELECT app_id, name, price, genres, tags, categories, positive, negative "
+        "SELECT app_id, name, price, genres, tags, categories, recommendations "
         "FROM games WHERE tags LIKE ? OR genres LIKE ?;";
     sqlite3_stmt* stmt = nullptr;
 

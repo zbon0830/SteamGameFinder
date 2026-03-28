@@ -90,8 +90,8 @@ namespace {
         return result;
     }
 
-    int reviewScore(const Game& game) {
-        return game.positive - game.negative;
+    int recommendationScore(const Game& game) {
+        return game.recommendations;
     }
 
     template <typename Store>
@@ -116,10 +116,10 @@ namespace {
                     return store.gamesById.at(a).price > store.gamesById.at(b).price;
                 });
         }
-        else if (sortOption == "Reviews (Most Positive)") {
+        else if (sortOption == "Recommendations (High-Low)") {
             std::sort(results.begin(), results.end(),
                 [&](const std::string& a, const std::string& b) {
-                    return reviewScore(store.gamesById.at(a)) > reviewScore(store.gamesById.at(b));
+                    return recommendationScore(store.gamesById.at(a)) > recommendationScore(store.gamesById.at(b));
                 });
         }
     }
@@ -148,11 +148,11 @@ Window::Window(QWidget *parent)
         "Name (A-Z)",
         "Price (Low-High)",
         "Price (High-Low)",
-        "Reviews (Most Positive)"
+        "Recommendations (High-Low)"
     });
 
     ui->resultsTableWidget->setColumnCount(4);
-    ui->resultsTableWidget->setHorizontalHeaderLabels({"Name", "Price", "Genre", "Reviews"});
+    ui->resultsTableWidget->setHorizontalHeaderLabels({"Name", "Price", "Genre", "Recommendations"});
     ui->resultsTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->resultsTableWidget->horizontalHeader()->setStretchLastSection(true);
     ui->resultsTableWidget->verticalHeader()->setVisible(false);
@@ -319,10 +319,9 @@ void Window::runSearch() {
                 : QString::fromStdString(game.tags);
             ui->resultsTableWidget->setItem(row, 2, new QTableWidgetItem(displayGenre));
 
-            QString reviewText = QString("%1 positive / %2 negative")
-                                     .arg(game.positive)
-                                     .arg(game.negative);
-            ui->resultsTableWidget->setItem(row, 3, new QTableWidgetItem(reviewText));
+            ui->resultsTableWidget->setItem(
+                row, 3, new QTableWidgetItem(QString::number(game.recommendations))
+            );
         }
 
         ui->resultsTableWidget->setUpdatesEnabled(true);
@@ -367,10 +366,9 @@ void Window::runSearch() {
             : QString::fromStdString(game.tags);
         ui->resultsTableWidget->setItem(row, 2, new QTableWidgetItem(displayGenre));
 
-        QString reviewText = QString("%1 positive / %2 negative")
-                                 .arg(game.positive)
-                                 .arg(game.negative);
-        ui->resultsTableWidget->setItem(row, 3, new QTableWidgetItem(reviewText));
+        ui->resultsTableWidget->setItem(
+            row, 3, new QTableWidgetItem(QString::number(game.recommendations))
+        );
     }
 
     ui->resultsTableWidget->setUpdatesEnabled(true);
