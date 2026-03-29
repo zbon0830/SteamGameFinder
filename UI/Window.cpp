@@ -130,7 +130,7 @@ Window::Window(QWidget *parent)
       ui(new Ui::Window) {
     ui->setupUi(this);
 
-    setWindowTitle("Steam Bundle Finder");
+    setWindowTitle("Steam Game Finder");
     resize(1000, 700);
 
     ui->minPriceSpinBox->setPrefix("$");
